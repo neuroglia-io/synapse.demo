@@ -40,5 +40,5 @@
 
 #logo-home {
   width: var(--base-size);
-  padding-right: calc(var(--base-size) / 2);
+  margin-right: calc(var(--base-size) / 2);
 }
