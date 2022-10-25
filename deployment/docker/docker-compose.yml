@@ -15,10 +15,10 @@ services:
     networks:
       default:
       synapse-net:
-        ipv4_address: 172.14.1.2
+        ipv4_address: 172.28.1.2
     extra_hosts:
       - host.docker.internal:host-gateway
-      - "${DEMO_HOST}:172.14.1.3"
+      - "${DEMO_HOST}:172.28.1.3"
 
   synapse.demo.webserver:
     image: ${DOCKER_REGISTRY-}synapse-demo
@@ -40,15 +40,15 @@ services:
     networks:
       default:
       synapse-net:
-        ipv4_address: 172.14.1.3
+        ipv4_address: 172.28.1.3
     extra_hosts:
-      - "${SYNAPSE_HOST}:172.14.1.2"
+      - "${SYNAPSE_HOST}:172.28.1.2"
 
 networks:
   default:
-    name: synapse-demo_default
+    name: synapse # this name is required by synapse (server <> worker communication)
   synapse-net:
     ipam:
       driver: default
       config:
-        - subnet: 172.14.1.0/16
+        - subnet: 172.28.1.0/16
