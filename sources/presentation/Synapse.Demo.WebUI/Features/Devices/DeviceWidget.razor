@@ -1,0 +1,52 @@
+﻿@namespace Synapse.Demo.WebUI
+@inject IKnobManager KnobManager
+@inject IMapper Mapper
+
+@if (deviceVM != null)
+{
+    <div class="device-widget@(deviceVM.IsActive ? " device-widget--active" : "")">
+        @if (hasKnob) {
+            <div @ref="knobsRef" id="@(deviceVM.Id)-knob" class="device-widget__knob"></div>
+        }
+        else if(deviceVM.Hero != null) {
+            <span class="material-symbols-outlined">@deviceVM.Hero</span>
+        }
+        <h3>@deviceVM.Label</h3>
+        <div>@deviceVM.Data</div>
+    </div>
+}
+
+@code {
+    private Device? device = null;
+    [Parameter] public Device? Device { get; set; } = null;
+    private DeviceWidgetViewModel? deviceVM = null;
+    private bool hasKnob { get; set; }
+    private ElementReference? knobsRef { get; set; }
+    private bool shouldRender = false;
+
+    protected override void OnParametersSet()
+    {
+        if (this.device != this.Device) {
+            this.device = this.Device;
+            this.deviceVM = this.Device.AsViewModel(this.Mapper);
+            this.hasKnob = this.deviceVM?.Hero?.GetType() == typeof(KnobHeroViewModel);
+            this.shouldRender = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (this.hasKnob && this.knobsRef != null)
+        {
+            var knob = (KnobHeroViewModel)this.deviceVM!.Hero!;
+            await this.KnobManager.CreateKnobAsync(this.knobsRef.Value, knob.Min, knob.Max, knob.Value, knob.Icon);
+        }
+    }
+
+    protected override bool ShouldRender()
+    {
+        if (!this.shouldRender) return false;
+        this.shouldRender = false;
+        return true;
+    }
+}

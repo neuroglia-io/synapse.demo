@@ -1,0 +1,147 @@
+﻿@namespace Synapse.Demo.WebUI
+@using System.Dynamic
+@inject IMapper Mapper
+
+<h2>Controls</h2>
+
+<div id="container">
+    <div class="control-group">
+        <input type="number" @bind="desiredTemperature" placeholder="Desired temperature" /><button type="button" @onclick="@(async() => await ChangeDesiredTemperature())">Change desired temperature</button>
+    </div>
+    <div class="control-group">
+        <input type="number" @bind="temperature" placeholder="Measured temperature" /><button type="button" @onclick="@(async() => await ChangeMeasuredTemperature())">Change measured temperature</button>
+    </div>
+    <div class="control-group">
+        <input type="number" @bind="humidity" placeholder="Measured humidity" /><button type="button" @onclick="@(async() => await ChangeMeasuredHumidity())">Change measured humidity</button>
+    </div>
+    @if (heater != null && !heater.IsTurnedOn)
+    {
+        <button type="button" @onclick="@(async() => await Activate(ApplicationConstants.DeviceIds.Heater))">Turn heater on</button>
+    }
+    else
+    {
+        <button type="button" @onclick="@(async() => await Deactivate(ApplicationConstants.DeviceIds.Heater))">Turn heater off</button>
+    }
+    @if (ac != null && !ac.IsTurnedOn)
+    {
+        <button type="button" @onclick="@(async() => await Activate(ApplicationConstants.DeviceIds.AirConditioning))">Turn A/C on</button>
+    }
+    else
+    {
+        <button type="button" @onclick="@(async() => await Deactivate(ApplicationConstants.DeviceIds.AirConditioning))">Turn A/C off</button>
+    }
+    <button type="button" @onclick="@(async() => await Activate(ApplicationConstants.DeviceIds.HallwayMotionSensor))">Activate hallway sensor</button>
+    <button type="button" @onclick="@(async() => await Activate(ApplicationConstants.DeviceIds.LivingMotionSensor))">Activate living sensor</button>
+    @if (hallwayLights!= null && !hallwayLights.IsTurnedOn)
+    {
+        <button type="button" @onclick="@(async() => await Activate(ApplicationConstants.DeviceIds.HallwayLights))">Turn hallway lights on</button>
+    }
+    else 
+    {
+        <button type="button" @onclick="@(async() => await Deactivate(ApplicationConstants.DeviceIds.HallwayLights))">Turn hallway lights off</button>
+    }
+    @if (livingLights != null && !livingLights.IsTurnedOn)
+    {
+        <button type="button" @onclick="@(async() => await Activate(ApplicationConstants.DeviceIds.LivingLights))">Turn living lights on</button>
+    }
+    else
+    {
+        <button type="button" @onclick="@(async() => await Deactivate(ApplicationConstants.DeviceIds.LivingLights))">Turn living lights off</button>
+    }
+    @if (livingBlinds != null && !livingBlinds.IsTurnedOn)
+    {
+        <button type="button" @onclick="@(async() => await Activate(ApplicationConstants.DeviceIds.LivingBlinds))">Open living blinds</button>
+    }
+    else
+    {
+        <button type="button" @onclick="@(async() => await Deactivate(ApplicationConstants.DeviceIds.LivingBlinds))">Close living blinds</button>
+    }
+    @if (kitchenBlinds != null && !kitchenBlinds.IsTurnedOn)
+    {
+        <button type="button" @onclick="@(async() => await Activate(ApplicationConstants.DeviceIds.KitchenBlinds))">Open kitchen blinds</button>
+    }
+    else
+    {
+        <button type="button" @onclick="@(async() => await Deactivate(ApplicationConstants.DeviceIds.KitchenBlinds))">Close kitchen blinds</button>
+    }
+</div>
+
+@code {
+    private IEnumerable<Device>? devices { get; set; } = null;
+    [Parameter] public IEnumerable<Device>? Devices { get; set; } = null;
+    [Parameter] public EventCallback<UpdateDeviceStateCommand> UpdateDeviceState { get; set; }
+    private bool shouldRender = false;
+    private Thermometer? thermometer => this.Mapper.Map<Thermometer>(this.devices?.FirstOrDefault(device => device.Id == ApplicationConstants.DeviceIds.Thermometer));
+    private Hydrometer? hydrometer => this.Mapper.Map<Hydrometer>(this.devices?.FirstOrDefault(device => device.Id == ApplicationConstants.DeviceIds.Hydrometer));
+    private Switchable? heater => this.Mapper.Map<Switchable>(this.devices?.FirstOrDefault(device => device.Id == ApplicationConstants.DeviceIds.Heater));
+    private Switchable? ac => this.Mapper.Map<Switchable>(this.devices?.FirstOrDefault(device => device.Id == ApplicationConstants.DeviceIds.AirConditioning));
+    private Switchable? hallwayLights => this.Mapper.Map<Switchable>(this.devices?.FirstOrDefault(device => device.Id == ApplicationConstants.DeviceIds.HallwayLights));
+    private Switchable? livingLights => this.Mapper.Map<Switchable>(this.devices?.FirstOrDefault(device => device.Id == ApplicationConstants.DeviceIds.LivingLights));
+    private Switchable? livingBlinds => this.Mapper.Map<Switchable>(this.devices?.FirstOrDefault(device => device.Id == ApplicationConstants.DeviceIds.LivingBlinds));
+    private Switchable? kitchenBlinds => this.Mapper.Map<Switchable>(this.devices?.FirstOrDefault(device => device.Id == ApplicationConstants.DeviceIds.KitchenBlinds));
+    private int temperature = 19;
+    private int desiredTemperature = 19;
+    private int humidity = 50;
+
+    protected override void OnParametersSet()
+    {
+        if (this.devices != this.Devices)
+        {
+            this.devices = this.Devices;
+            this.temperature = this.thermometer?.Temperature ?? 19;
+            this.desiredTemperature = this.thermometer?.DesiredTemperature ?? 19;
+            this.humidity = this.hydrometer?.Humidity ?? 50;
+            this.shouldRender = true;
+        }
+    }
+
+    private async Task ChangeDesiredTemperature() {
+        if (this.thermometer != null)
+        {
+            dynamic state = new { desired = this.desiredTemperature , temperature = this.thermometer.Temperature };
+        var command = new UpdateDeviceStateCommand(this.thermometer!.Id, state);
+            await this.UpdateDeviceState.InvokeAsync(command);
+        }
+    }
+
+    private async Task ChangeMeasuredTemperature()
+    {
+        if (this.thermometer != null)
+        {
+            dynamic state = new { temperature = this.temperature, desired = this.thermometer.DesiredTemperature };
+            var command = new UpdateDeviceStateCommand(this.thermometer!.Id, state);
+            await this.UpdateDeviceState.InvokeAsync(command);
+        }
+    }
+
+    private async Task ChangeMeasuredHumidity()
+    {
+        if (this.thermometer != null)
+        {
+            dynamic state = new { humidity = this.humidity };
+            var command = new UpdateDeviceStateCommand(this.hydrometer!.Id, state);
+            await this.UpdateDeviceState.InvokeAsync(command);
+        }
+    }
+
+    private async Task Activate(string sensorId)
+    {
+        var state = new { on = true };
+        var command = new UpdateDeviceStateCommand(sensorId, state);
+        await this.UpdateDeviceState.InvokeAsync(command);
+    }
+
+    private async Task Deactivate(string sensorId)
+    {
+        var state = new { on = false };
+        var command = new UpdateDeviceStateCommand(sensorId, state);
+        await this.UpdateDeviceState.InvokeAsync(command);
+    }
+
+    protected override bool ShouldRender()
+    {
+        if (!this.shouldRender) return false;
+        this.shouldRender = false;
+        return true;
+    }
+}

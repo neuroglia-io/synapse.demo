@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Device\**" />
+    <Compile Remove="Entities\**" />
+    <Compile Remove="Enumerations\**" />
+    <EmbeddedResource Remove="Device\**" />
+    <EmbeddedResource Remove="Entities\**" />
+    <EmbeddedResource Remove="Enumerations\**" />
+    <None Remove="Device\**" />
+    <None Remove="Entities\**" />
+    <None Remove="Enumerations\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Neuroglia.Data" Version="2.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Synapse.Demo.Integration\Synapse.Demo.Integration.csproj" />
+  </ItemGroup>
+
+</Project>

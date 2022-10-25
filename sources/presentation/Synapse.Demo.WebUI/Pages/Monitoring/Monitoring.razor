@@ -1,0 +1,74 @@
+﻿@page "/"
+@using Synapse.Demo.WebUI.Pages.Monitoring.State
+@inherits StatefulComponent<MonitoringState>
+
+<button id="show-controls" type="button" @onclick="ToggleControls">
+    <span class="material-symbols-outlined">tune</span>
+</button>
+@if (devices != null) {
+<ul>
+    @foreach (var device in devices) {
+        <li><DeviceWidget Device="device" /></li>
+    }
+</ul>
+}
+<div @ref="controls" id="controls" class="@(areControlsHidden ? "hide" : "")">
+    <Controls Devices="devices" UpdateDeviceState="SendUpdateDeviceStateCommand" />
+</div>
+
+@code {
+    private Subject<bool>? disposeNotifier;
+    private IEnumerable<Device>? devices = null;
+    private ElementReference controls;
+    private bool areControlsHidden = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        this.disposeNotifier = new Subject<bool>();
+        this.Feature
+            .SelectDevices()
+            .TakeUntil(this.disposeNotifier)
+            .Subscribe(devices => {
+                this.devices = devices;
+                this.StateHasChanged();
+            });
+        this.Feature
+            .SelectAreControlsHidden()
+            .TakeUntil(this.disposeNotifier)
+            .Subscribe(areControlsHidden =>
+            {
+                this.areControlsHidden = areControlsHidden;
+                this.StateHasChanged();
+            });
+        this.Dispatcher.Dispatch(new InitializeState());
+    }
+
+    private void ToggleControls()
+    {
+        this.Dispatcher.Dispatch(new ToggleControls());
+    }
+
+    private void SendUpdateDeviceStateCommand(UpdateDeviceStateCommand command)
+    {
+        this.Dispatcher.Dispatch(new SendUpdateStateCommand(command));
+        this.ToggleControls();
+    }
+
+    private bool disposed;
+    protected override void Dispose(bool disposing)
+    {
+        if (!this.disposed)
+        {
+            if (this.disposeNotifier != null)
+            {
+                this.disposeNotifier.OnNext(true);
+                this.disposeNotifier.OnCompleted();
+                this.disposeNotifier.Dispose();
+                this.disposeNotifier = null;
+            }
+            this.disposed = true;
+        }
+        base.Dispose(disposing);
+    }
+}
