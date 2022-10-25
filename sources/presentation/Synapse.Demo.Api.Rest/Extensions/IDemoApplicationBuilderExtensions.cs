@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Microsoft.AspNetCore.Mvc.Controllers;
+
 namespace Synapse.Demo.Api.Rest.Extensions.DependencyInjection;
 
 /// <summary>
@@ -50,6 +52,13 @@ public static class IDemoApplicationBuilderExtensions
                 ;
         demoBuilder.Services.AddSwaggerGen(builder =>
         {
+            builder.CustomOperationIds(o =>
+            {
+                if (!string.IsNullOrWhiteSpace(o.RelativePath)
+                && o.RelativePath.Contains("odata"))
+                    return o.RelativePath;
+                return ((ControllerActionDescriptor)o.ActionDescriptor).ActionName;
+            });
             builder.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
             builder.SwaggerDoc("v1", new OpenApiInfo
             {

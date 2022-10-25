@@ -114,7 +114,7 @@ public class HeaterSimulator
                     desired = desiredTemperature
                 };
                 await mediator.ExecuteAsync(new UpdateDeviceStateCommand(thermometer.Id, state));
-                await Task.Delay(2000);
+                await Task.Delay(3000);
             }
         }
         catch (TaskCanceledException) { }

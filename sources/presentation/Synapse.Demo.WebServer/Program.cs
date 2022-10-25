@@ -14,7 +14,6 @@
 
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.Extensions.Hosting;
 using Neuroglia.Eventing;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using Synapse.Demo.Api.Rest.Extensions.DependencyInjection;
@@ -64,7 +63,7 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseCloudEvents();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
@@ -79,6 +78,7 @@ app.UseSwaggerUI(builder =>
     builder.DocExpansion(DocExpansion.None);
     builder.SwaggerEndpoint("/api/v1/doc/oas.json", "Synapse API v1");
     builder.RoutePrefix = "api/doc";
+    builder.DisplayOperationId();
 });
 app.MapHub<DemoApplicationHub>("/api/ws");
 app.MapControllers();
