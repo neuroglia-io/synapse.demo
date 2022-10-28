@@ -1,0 +1,121 @@
+{
+  "id": "light-on-motion",
+  "name": "Light on motion",
+  "description": "Turns lights on when detecting motion",
+  "version": "0.1.0",
+  "specVersion": "0.8",
+  "events": [
+    {
+      "name": "on-motion-detected",
+      "source": "https://demo.synpase.com",
+      "type": "com.synapse.demo/device/state-changed/v1",
+      "correlation": [
+        {
+          "contextAttributeName": "subject",
+          "contextAttributeValue": "motion-sensor-.*"
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "get-device",
+      "operation": "http://iot-demo/api/v1/doc/oas.json#GetDeviceById",
+      "type": "rest"
+    },
+    {
+      "name": "update-device-state",
+      "operation": "http://iot-demo/api/v1/doc/oas.json#UpdateDeviceState",
+      "type": "rest"
+    }
+  ],
+  "states": [
+    {
+      "name": "On motion detected",
+      "type": "event",
+      "onEvents": [
+        {
+          "actions": [],
+          "eventRefs": [
+            "on-motion-detected"
+          ],
+          "eventDataFilter": {
+            "toStateData": "${ .event }"
+          }
+        }
+      ],
+      "transition": "Turn on the lights"
+    },
+    {
+      "name": "Turn on the lights",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Get motion sensor",
+          "actionDataFilter": {
+            "toStateData": "${ .motionSensor }"
+          },
+          "functionRef": {
+            "refName": "get-device",
+            "arguments": {
+              "id": "${ .event.aggregateId }"
+            }
+          }
+        },
+        {
+          "name": "Get lights in area",
+          "actionDataFilter": {
+            "toStateData": "${ .lights }"
+          },
+          "functionRef": {
+            "refName": "get-device",
+            "arguments": {
+              "id": "${ .motionSensor.id | sub(\"motion-sensor\";\"lights\") }"
+            }
+          }
+        },
+        {
+          "name": "Turn on the lights",
+          "actionDataFilter": {
+            "useResults": false
+          },
+          "functionRef": {
+            "refName": "update-device-state",
+            "arguments": {
+              "deviceId": "${ .lights.id }",
+              "state": {
+                "on": true
+              }
+            }
+          }
+        }
+      ],
+      "transition": "Wait for 10 secs"
+    },
+    {
+      "name": "Wait for 10 secs",
+      "type": "sleep",
+      "duration": "PT10S",
+      "transition": "Turn off the lights"
+    },
+    {
+      "name": "Turn off the lights",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Turn off the lights",
+          "functionRef": {
+            "refName": "update-device-state",
+            "arguments": {
+              "deviceId": "${ .lights.id }",
+              "state": {
+                "on": false
+              }
+            }
+          }
+        }
+      ],
+      "end": true
+    }
+  ]
+}

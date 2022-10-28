@@ -1,0 +1,83 @@
+{
+  "id": "power-saver",
+  "name": "Power saver",
+  "description": "Saves power by shutting down lights and setting the temperature to 16 ° C everyday when leaving for work",
+  "version": "0.1.1",
+  "specVersion": "0.8",
+  "functions": [
+    {
+      "name": "get-devices",
+      "operation": "http://iot-demo/api/v1/doc/oas.json#GetDevices",
+      "type": "rest"
+    },
+    {
+      "name": "update-device-state",
+      "operation": "http://iot-demo/api/v1/doc/oas.json#UpdateDeviceState",
+      "type": "rest"
+    },
+    {
+      "name": "patch-device-state",
+      "operation": "http://iot-demo/api/v1/doc/oas.json#PatchDeviceState",
+      "type": "rest"
+    }
+  ],
+  "states": [
+    {
+      "name": "Get lights",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Get lights",
+          "actionDataFilter": {
+            "results": "${ [ .[] | select(.id | startswith(\"lights-\")) ] }",
+            "toStateData": "${ .lights }"
+          },
+          "functionRef": {
+            "refName": "get-devices"
+          }
+        }
+      ],
+      "transition": "Shutdown lights"
+    },
+    {
+      "name": "Shutdown lights",
+      "type": "foreach",
+      "inputCollection": "${ .lights }",
+      "actions": [
+        {
+          "name": "Turn off the lights",
+          "functionRef": {
+            "refName": "update-device-state",
+            "arguments": {
+              "deviceId": "${ .light.id }",
+              "state": {
+                "on": false
+              }
+            }
+          }
+        }
+      ],
+      "iterationParam": "light",
+      "transition": "Set desired temperature"
+    },
+    {
+      "name": "Set desired temperature",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Set desired temperature",
+          "functionRef": {
+            "refName": "patch-device-state",
+            "arguments": {
+			  "deviceId": "thermometer",
+			  "state":{
+				"desired": 16
+			  }
+            }
+          }
+        }
+      ],
+      "end": true
+    }
+  ]
+}

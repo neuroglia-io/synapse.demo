@@ -1,0 +1,159 @@
+{
+  "id": "manage-house-temperature",
+  "name": "Manage House Temperature",
+  "description": "Monitors and manages the house's temperature",
+  "version": "0.1.0",
+  "specVersion": "0.8",
+  "events": [
+    {
+      "name": "on-temperature-changed",
+      "source": "https://demo.synpase.com",
+      "type": "com.synapse.demo/device/state-changed/v1",
+      "correlation": [
+        {
+          "contextAttributeName": "subject",
+          "contextAttributeValue": "thermometer"
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "update-device-state",
+      "type": "rest",
+	  "operation": "http://iot-demo/api/v1/doc/oas.json#UpdateDeviceState"
+    }
+  ],
+  "states": [
+    {
+      "name": "On temperature changed",
+      "type": "event",
+      "onEvents": [
+        {
+          "actions": [],
+          "eventRefs": [
+            "on-temperature-changed"
+          ],
+          "eventDataFilter": {
+            "toStateData": "${ .thermometer }"
+          }
+        }
+      ],
+      "transition": "Is temperature ok?"
+    },
+    {
+      "name": "Is temperature ok?",
+      "type": "switch",
+      "dataConditions": [
+        {
+          "name": "Too cold",
+          "transition": "Turn on the heater",
+          "condition": "${ .thermometer.state.temperature != null and .thermometer.state.desired != null and .thermometer.state.temperature < .thermometer.state.desired }"
+        },
+        {
+          "name": "Too hot",
+          "transition": "Turn on the AC",
+          "condition": "${ .thermometer.state.temperature != null and .thermometer.state.desired != null and .thermometer.state.temperature > .thermometer.state.desired }"
+        },
+	    {
+          "name": "Perfect",
+          "transition": "Turn off heater and AC",
+          "condition": "${ .thermometer.state.temperature != null and .thermometer.state.desired != null and .thermometer.state.temperature == .thermometer.state.desired }"
+        }
+      ],
+      "defaultCondition": {
+        "end": true
+      }
+    },
+    {
+      "name": "Turn on the heater",
+      "type": "operation",
+      "actions": [
+	  {
+		"name": "Turn off the AC",
+		"functionRef":{
+			"refName": "update-device-state",
+			"arguments":{
+				"deviceId": "air-conditioning",
+				"state": {
+					"on": false
+				}
+			}
+		}
+	  },
+	  {
+		"name": "Turn on the heater",
+		"functionRef":{
+			"refName": "update-device-state",
+			"arguments":{
+				"deviceId": "heater",
+				"state": {
+					"on": true
+				}
+			}
+		}
+	  }],
+      "end": true
+    },
+    {
+      "name": "Turn on the AC",
+      "type": "operation",
+      "actions": [
+	  {
+		"name": "Turn off the heater",
+		"functionRef":{
+			"refName": "update-device-state",
+			"arguments":{
+				"deviceId": "heater",
+				"state": {
+					"on": false
+				}
+			}
+		}
+	  },
+	  {
+		"name": "Turn on the AC",
+		"functionRef":{
+			"refName": "update-device-state",
+			"arguments":{
+				"deviceId": "air-conditioning",
+				"state": {
+					"on": true
+				}
+			}
+		}
+	  }],
+      "end": true
+    },
+    {
+      "name": "Turn off heater and AC",
+      "type": "operation",
+      "actions":  [
+	  {
+		"name": "Turn off the heater",
+		"functionRef":{
+			"refName": "update-device-state",
+			"arguments":{
+				"deviceId": "heater",
+				"state": {
+					"on": false
+				}
+			}
+		}
+	  },
+	  {
+		"name": "Turn off the AC",
+		"functionRef":{
+			"refName": "update-device-state",
+			"arguments":{
+				"deviceId": "air-conditioning",
+				"state": {
+					"on": false
+				}
+			}
+		}
+	  }],
+      "end": true
+    }
+  ]
+}
