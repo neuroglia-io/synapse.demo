@@ -4,9 +4,9 @@ services:
   synapse:
     image: ghcr.io/serverlessworkflow/synapse:latest
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - SYNAPSE_API_HOSTNAME=${SYNAPSE_HOST}
-      - SYNAPSE_CLOUDEVENTS_SINK_URI=https://${DEMO_HOST}
+      ASPNETCORE_ENVIRONMENT: 'Development'
+      SYNAPSE_API_HOSTNAME: '${SYNAPSE_HOST}'
+      SYNAPSE_CLOUDEVENTS_SINK_URI: 'https://${DEMO_HOST}'
     ports:
       - 42286:42286
       - 41387:41387
@@ -26,14 +26,15 @@ services:
       dockerfile: sources/presentation/Synapse.Demo.WebServer/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: 'https://+:443;http://+:80'
+      #ASPNETCORE_URLS: 'https://+:443;http://+:80'
+      ASPNETCORE_URLS: 'http://+:80'
       HOST: 'https://${DEMO_HOST}'
       CloudEventsSource: 'https://demo.synpase.com'
       CloudEventBroker: 'http://${SYNAPSE_HOST}:42286'
       SchemaRegistry: 'https://schema-registry.synapse.com'
     ports:
       - 8088:80
-      - 44362:443
+    #  - 44362:443
     depends_on:
       - synapse
     networks:
