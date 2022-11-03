@@ -12,7 +12,7 @@ services:
       - 41387:41387 # Synapse GRPC API port
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock # Mandatory in docker mode, used to spawn worker containers
-      - ./data/definitions:/app/data/definitions # Load demo use-cases
+      #- ./data/definitions:/app/data/definitions # Load demo use-cases
     extra_hosts:
       - host.docker.internal:host-gateway # Mandatory in docker mode, used to communicate with worker containers
 
