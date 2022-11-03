@@ -2,22 +2,19 @@ version: '3.4'
 
 services:
   synapse:
-    image: ghcr.io/serverlessworkflow/synapse:latest
+    image: ghcr.io/serverlessworkflow/synapse:latest # Synapse image
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - SYNAPSE_API_HOSTNAME=${SYNAPSE_HOST}
-      - SYNAPSE_CLOUDEVENTS_SINK_URI=https://${DEMO_HOST}
+      ASPNETCORE_ENVIRONMENT: 'Development'
+      SYNAPSE_API_HOSTNAME: '${SYNAPSE_HOST}' # The hostname used by Synapse workers to communicate with the server
+      SYNAPSE_CLOUDEVENTS_SINK_URI: 'http://${DEMO_HOST}' # The cloud event sink to publish cloud events to. In this simple use-case, Synapse will publish the events directly to the demo service.
     ports:
-      - 42286:42286
-      - 41387:41387
+      - 42286:42286 # Synapse HTTP RESTful API port
+      - 41387:41387 # Synapse GRPC API port
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      default:
-      synapse-net:
-        ipv4_address: 172.28.1.2
+      - /var/run/docker.sock:/var/run/docker.sock # Mandatory in docker mode, used to spawn worker containers
+      #- ./data/definitions:/app/data/definitions # Load demo use-cases
     extra_hosts:
-      - host.docker.internal:host-gateway
+      - host.docker.internal:host-gateway # Mandatory in docker mode, used to communicate with worker containers
 
   iot-demo:
     image: ${DOCKER_REGISTRY-}synapse-demo
@@ -26,28 +23,16 @@ services:
       dockerfile: sources/presentation/Synapse.Demo.WebServer/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: 'https://+:443;http://+:80'
-      HOST: 'https://${DEMO_HOST}'
+      ASPNETCORE_URLS: 'http://+:80'
+      HOST: 'http://${DEMO_HOST}'
       CloudEventsSource: 'https://demo.synpase.com'
-      CloudEventBroker: 'http://${SYNAPSE_HOST}:42286'
+      CloudEventBroker: 'http://${SYNAPSE_HOST}:42286' # The demo will publish its cloud events directly to Synapse for this simple use-case
       SchemaRegistry: 'https://schema-registry.synapse.com'
     ports:
       - 8088:80
-      - 44362:443
     depends_on:
       - synapse
-    networks:
-      default:
-      synapse-net:
-        ipv4_address: 172.28.1.3
-    extra_hosts:
-      - "${SYNAPSE_HOST}:172.28.1.2"
 
 networks:
   default:
-    name: synapse
-  synapse-net:
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.28.1.0/16
+    name: synapse # required by Synapse, used by the workers
